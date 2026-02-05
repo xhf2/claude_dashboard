@@ -1,0 +1,10 @@
+dash>=2.14.0
+plotly>=5.18.0
+xarray>=2024.1.0
+netCDF4>=1.6.0
+pandas>=2.0.0
+numpy>=1.24.0
+pyproj>=3.6.0
+shapely>=2.0.0
+pyshp>=2.3.0
+scores>=1.2.0
