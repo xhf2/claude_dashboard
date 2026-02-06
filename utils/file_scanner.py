@@ -46,37 +46,37 @@ class FileScanner:
 
         return sorted(cycles, reverse=True)
 
-    def get_steps(self, cycle: str) -> List[str]:
-        """Get list of available processing steps for a cycle.
+    def get_models(self, cycle: str) -> List[str]:
+        """Get list of available forecast models for a cycle.
 
         Args:
             cycle: Cycle name (e.g., "20250308T1200Z")
 
         Returns:
-            List of available step names
+            List of available model names
         """
         cycle_path = self.realm_path / cycle
         if not cycle_path.exists():
             return []
 
-        steps = []
+        models = []
         for item in cycle_path.iterdir():
-            if item.is_dir() and item.name in config.STEPS:
-                steps.append(item.name)
+            if item.is_dir() and item.name in config.MODELS:
+                models.append(item.name)
 
-        return sorted(steps)
+        return sorted(models)
 
-    def get_parameters(self, cycle: str, step: str) -> List[str]:
-        """Get list of available parameters for a cycle and step.
+    def get_parameters(self, cycle: str, model: str) -> List[str]:
+        """Get list of available parameters for a cycle and model.
 
         Args:
             cycle: Cycle name
-            step: Step name (e.g., "blend")
+            model: Model name (e.g., "blend")
 
         Returns:
             List of available parameter names
         """
-        param_path = self.realm_path / cycle / step
+        param_path = self.realm_path / cycle / model
         if not param_path.exists():
             return []
 
@@ -87,18 +87,18 @@ class FileScanner:
 
         return sorted(parameters)
 
-    def get_outputs(self, cycle: str, step: str, parameter: str) -> List[str]:
-        """Get list of available output types for a cycle/step/parameter.
+    def get_outputs(self, cycle: str, model: str, parameter: str) -> List[str]:
+        """Get list of available output types for a cycle/model/parameter.
 
         Args:
             cycle: Cycle name
-            step: Step name
+            model: Model name
             parameter: Parameter name (e.g., "precipacc24h")
 
         Returns:
             List of available output type names
         """
-        output_path = self.realm_path / cycle / step / parameter
+        output_path = self.realm_path / cycle / model / parameter
         if not output_path.exists():
             return []
 
@@ -113,20 +113,20 @@ class FileScanner:
         return sorted(outputs)
 
     def get_files(
-        self, cycle: str, step: str, parameter: str, output: str
+        self, cycle: str, model: str, parameter: str, output: str
     ) -> List[Dict]:
         """Get list of NetCDF files for the specified path.
 
         Args:
             cycle: Cycle name
-            step: Step name
+            model: Model name
             parameter: Parameter name
             output: Output type name
 
         Returns:
             List of dicts with file info (path, validtime, leadhour)
         """
-        file_path = self.realm_path / cycle / step / parameter / output
+        file_path = self.realm_path / cycle / model / parameter / output
         if not file_path.exists():
             return []
 
@@ -149,9 +149,16 @@ class FileScanner:
             cycle: Cycle name for computing lead hour
 
         Returns:
-            Dict with path, validtime, leadhour, or None if parsing fails
+            Dict with path, validtime, leadhour, mtime, or None if parsing fails
         """
         filename = filepath.name
+
+        # Get file modification time
+        try:
+            mtime = datetime.fromtimestamp(filepath.stat().st_mtime)
+            mtime_str = mtime.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            mtime_str = None
 
         # Try to extract validtime from filename
         # Pattern: starts with YYYYMMDDTHH00Z
@@ -167,6 +174,7 @@ class FileScanner:
                     "leadhour_start": int(lead_range_match.group(1)),
                     "leadhour_end": int(lead_range_match.group(2)),
                     "is_merged": True,
+                    "mtime": mtime_str,
                 }
             return None
 
@@ -191,23 +199,24 @@ class FileScanner:
             "validtime": validtime_str,
             "leadhour": leadhour,
             "is_merged": False,
+            "mtime": mtime_str,
         }
 
     def get_validtimes(
-        self, cycle: str, step: str, parameter: str, output: str
+        self, cycle: str, model: str, parameter: str, output: str
     ) -> List[Tuple[str, int]]:
         """Get list of (validtime, leadhour) tuples for dropdown.
 
         Args:
             cycle: Cycle name
-            step: Step name
+            model: Model name
             parameter: Parameter name
             output: Output type name
 
         Returns:
             List of (validtime_str, leadhour) tuples
         """
-        files = self.get_files(cycle, step, parameter, output)
+        files = self.get_files(cycle, model, parameter, output)
         validtimes = []
 
         for f in files:
@@ -224,7 +233,7 @@ class FileScanner:
     def get_file_for_validtime(
         self,
         cycle: str,
-        step: str,
+        model: str,
         parameter: str,
         output: str,
         validtime: str,
@@ -233,7 +242,7 @@ class FileScanner:
 
         Args:
             cycle: Cycle name
-            step: Step name
+            model: Model name
             parameter: Parameter name
             output: Output type name
             validtime: Valid time string or "Lead XX-XXh" for merged files
@@ -241,7 +250,7 @@ class FileScanner:
         Returns:
             File path string or None
         """
-        files = self.get_files(cycle, step, parameter, output)
+        files = self.get_files(cycle, model, parameter, output)
 
         for f in files:
             if f.get("is_merged"):
@@ -261,19 +270,19 @@ class FileScanner:
         """Build complete file hierarchy for the realm.
 
         Returns:
-            Nested dict: {cycle: {step: {parameter: {output: [files]}}}}
+            Nested dict: {cycle: {model: {parameter: {output: [files]}}}}
         """
         hierarchy = {}
 
         for cycle in self.get_cycles():
             hierarchy[cycle] = {}
-            for step in self.get_steps(cycle):
-                hierarchy[cycle][step] = {}
-                for param in self.get_parameters(cycle, step):
-                    hierarchy[cycle][step][param] = {}
-                    for output in self.get_outputs(cycle, step, param):
-                        hierarchy[cycle][step][param][output] = self.get_files(
-                            cycle, step, param, output
+            for model in self.get_models(cycle):
+                hierarchy[cycle][model] = {}
+                for param in self.get_parameters(cycle, model):
+                    hierarchy[cycle][model][param] = {}
+                    for output in self.get_outputs(cycle, model, param):
+                        hierarchy[cycle][model][param][output] = self.get_files(
+                            cycle, model, param, output
                         )
 
         return hierarchy

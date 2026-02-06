@@ -60,8 +60,8 @@ class DropdownBuilder:
         cycles = self.scanner.get_cycles()
         return [{"label": c, "value": c} for c in cycles]
 
-    def get_step_options(self, cycle: str) -> List[Dict[str, str]]:
-        """Get dropdown options for available steps.
+    def get_model_options(self, cycle: str) -> List[Dict[str, str]]:
+        """Get dropdown options for available models.
 
         Args:
             cycle: Selected cycle
@@ -69,23 +69,23 @@ class DropdownBuilder:
         Returns:
             List of option dicts
         """
-        steps = self.scanner.get_steps(cycle)
-        return [{"label": s, "value": s} for s in steps]
+        models = self.scanner.get_models(cycle)
+        return [{"label": m, "value": m} for m in models]
 
     def get_parameter_options(
-        self, cycle: str, step: str, filter_params: Optional[List[str]] = None
+        self, cycle: str, model: str, filter_params: Optional[List[str]] = None
     ) -> List[Dict[str, str]]:
         """Get dropdown options for available parameters.
 
         Args:
             cycle: Selected cycle
-            step: Selected step
+            model: Selected model
             filter_params: Optional list of parameters to filter to
 
         Returns:
             List of option dicts
         """
-        params = self.scanner.get_parameters(cycle, step)
+        params = self.scanner.get_parameters(cycle, model)
 
         if filter_params:
             params = [p for p in params if p in filter_params]
@@ -98,36 +98,36 @@ class DropdownBuilder:
         return options
 
     def get_output_options(
-        self, cycle: str, step: str, parameter: str
+        self, cycle: str, model: str, parameter: str
     ) -> List[Dict[str, str]]:
         """Get dropdown options for available output types.
 
         Args:
             cycle: Selected cycle
-            step: Selected step
+            model: Selected model
             parameter: Selected parameter
 
         Returns:
             List of option dicts
         """
-        outputs = self.scanner.get_outputs(cycle, step, parameter)
+        outputs = self.scanner.get_outputs(cycle, model, parameter)
         return [{"label": o, "value": o} for o in outputs]
 
     def get_validtime_options(
-        self, cycle: str, step: str, parameter: str, output: str
+        self, cycle: str, model: str, parameter: str, output: str
     ) -> List[Dict[str, str]]:
         """Get dropdown options for available valid times.
 
         Args:
             cycle: Selected cycle
-            step: Selected step
+            model: Selected model
             parameter: Selected parameter
             output: Selected output type
 
         Returns:
             List of option dicts
         """
-        validtimes = self.scanner.get_validtimes(cycle, step, parameter, output)
+        validtimes = self.scanner.get_validtimes(cycle, model, parameter, output)
         options = []
         for vt, lh in validtimes:
             if "Lead" in vt:
@@ -210,9 +210,9 @@ def create_standard_dropdowns(
             ),
             html.Div(
                 [
-                    html.Label("Step"),
+                    html.Label("Model"),
                     dcc.Dropdown(
-                        id=f"{page_id}-step-dropdown",
+                        id=f"{page_id}-model-dropdown",
                         options=[],
                         value=None,
                         clearable=False,

@@ -64,9 +64,10 @@ layout = html.Div(
     Input(f"{PAGE_ID}-refresh-btn", "n_clicks"),
 )
 def update_realm_options(n_clicks):
+    default = "test_realm"
     builder = DropdownBuilder()
     options = builder.get_realm_options()
-    return create_dropdown_options(options, "test_realm")
+    return create_dropdown_options(options, default)
 
 
 @callback(
@@ -84,31 +85,31 @@ def update_cycle_options(realm, n_clicks):
 
 
 @callback(
-    Output(f"{PAGE_ID}-step-dropdown", "options"),
-    Output(f"{PAGE_ID}-step-dropdown", "value"),
+    Output(f"{PAGE_ID}-model-dropdown", "options"),
+    Output(f"{PAGE_ID}-model-dropdown", "value"),
     Input(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_step_options(cycle, realm):
+def update_model_options(cycle, realm):
     if not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_step_options(cycle)
+    options = builder.get_model_options(cycle)
     return create_dropdown_options(options, "blend")
 
 
 @callback(
     Output(f"{PAGE_ID}-parameter-dropdown", "options"),
     Output(f"{PAGE_ID}-parameter-dropdown", "value"),
-    Input(f"{PAGE_ID}-step-dropdown", "value"),
+    Input(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_parameter_options(step, cycle, realm):
-    if not step or not cycle or not realm:
+def update_parameter_options(model, cycle, realm):
+    if not model or not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_parameter_options(cycle, step)
+    options = builder.get_parameter_options(cycle, model)
     return create_dropdown_options(options)
 
 
@@ -116,15 +117,15 @@ def update_parameter_options(step, cycle, realm):
     Output(f"{PAGE_ID}-output-dropdown", "options"),
     Output(f"{PAGE_ID}-output-dropdown", "value"),
     Input(f"{PAGE_ID}-parameter-dropdown", "value"),
-    State(f"{PAGE_ID}-step-dropdown", "value"),
+    State(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_output_options(parameter, step, cycle, realm):
-    if not parameter or not step or not cycle or not realm:
+def update_output_options(parameter, model, cycle, realm):
+    if not parameter or not model or not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_output_options(cycle, step, parameter)
+    options = builder.get_output_options(cycle, model, parameter)
     return create_dropdown_options(options)
 
 
@@ -133,15 +134,15 @@ def update_output_options(parameter, step, cycle, realm):
     Output(f"{PAGE_ID}-validtime-dropdown", "value"),
     Input(f"{PAGE_ID}-output-dropdown", "value"),
     State(f"{PAGE_ID}-parameter-dropdown", "value"),
-    State(f"{PAGE_ID}-step-dropdown", "value"),
+    State(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_validtime_options(output, parameter, step, cycle, realm):
-    if not output or not parameter or not step or not cycle or not realm:
+def update_validtime_options(output, parameter, model, cycle, realm):
+    if not output or not parameter or not model or not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_validtime_options(cycle, step, parameter, output)
+    options = builder.get_validtime_options(cycle, model, parameter, output)
     return create_dropdown_options(options)
 
 
@@ -155,18 +156,18 @@ def update_validtime_options(output, parameter, step, cycle, realm):
     Input(f"{PAGE_ID}-validtime-dropdown", "value"),
     State(f"{PAGE_ID}-output-dropdown", "value"),
     State(f"{PAGE_ID}-parameter-dropdown", "value"),
-    State(f"{PAGE_ID}-step-dropdown", "value"),
+    State(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_metadata(validtime, output, parameter, step, cycle, realm):
+def update_metadata(validtime, output, parameter, model, cycle, realm):
     empty = html.P("Select data to view metadata")
 
-    if not all([validtime, output, parameter, step, cycle, realm]):
+    if not all([validtime, output, parameter, model, cycle, realm]):
         return empty, empty, empty, empty, empty
 
     scanner = FileScanner(realm)
-    file_path = scanner.get_file_for_validtime(cycle, step, parameter, output, validtime)
+    file_path = scanner.get_file_for_validtime(cycle, model, parameter, output, validtime)
 
     if not file_path:
         return (
@@ -236,7 +237,7 @@ def update_metadata(validtime, output, parameter, step, cycle, realm):
         )
 
         # File listing
-        all_files = scanner.get_files(cycle, step, parameter, output)
+        all_files = scanner.get_files(cycle, model, parameter, output)
         if all_files:
             files_df = pd.DataFrame([
                 {
@@ -263,3 +264,5 @@ def update_metadata(validtime, output, parameter, step, cycle, realm):
     except Exception as e:
         error_msg = html.P(f"Error loading file: {str(e)}", style={"color": "red"})
         return error_msg, empty, empty, empty, empty
+
+

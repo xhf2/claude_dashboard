@@ -72,9 +72,9 @@ layout = html.Div(
                 ),
                 html.Div(
                     [
-                        html.Label("Step"),
+                        html.Label("Model"),
                         dcc.Dropdown(
-                            id=f"{PAGE_ID}-step-dropdown",
+                            id=f"{PAGE_ID}-model-dropdown",
                             options=[],
                             value=None,
                             clearable=False,
@@ -190,31 +190,31 @@ def update_cycle_options(realm, n_clicks):
 
 
 @callback(
-    Output(f"{PAGE_ID}-step-dropdown", "options"),
-    Output(f"{PAGE_ID}-step-dropdown", "value"),
+    Output(f"{PAGE_ID}-model-dropdown", "options"),
+    Output(f"{PAGE_ID}-model-dropdown", "value"),
     Input(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_step_options(cycle, realm):
+def update_model_options(cycle, realm):
     if not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_step_options(cycle)
+    options = builder.get_model_options(cycle)
     return create_dropdown_options(options, "blend")
 
 
 @callback(
     Output(f"{PAGE_ID}-parameter-dropdown", "options"),
     Output(f"{PAGE_ID}-parameter-dropdown", "value"),
-    Input(f"{PAGE_ID}-step-dropdown", "value"),
+    Input(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_parameter_options(step, cycle, realm):
-    if not step or not cycle or not realm:
+def update_parameter_options(model, cycle, realm):
+    if not model or not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_parameter_options(cycle, step, PAGE_PARAMS)
+    options = builder.get_parameter_options(cycle, model, PAGE_PARAMS)
     return create_dropdown_options(options, "windspd10m")
 
 
@@ -222,15 +222,15 @@ def update_parameter_options(step, cycle, realm):
     Output(f"{PAGE_ID}-output-dropdown", "options"),
     Output(f"{PAGE_ID}-output-dropdown", "value"),
     Input(f"{PAGE_ID}-parameter-dropdown", "value"),
-    State(f"{PAGE_ID}-step-dropdown", "value"),
+    State(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_output_options(parameter, step, cycle, realm):
-    if not parameter or not step or not cycle or not realm:
+def update_output_options(parameter, model, cycle, realm):
+    if not parameter or not model or not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_output_options(cycle, step, parameter)
+    options = builder.get_output_options(cycle, model, parameter)
     return create_dropdown_options(options, "expectedvalues_extract")
 
 
@@ -239,15 +239,15 @@ def update_output_options(parameter, step, cycle, realm):
     Output(f"{PAGE_ID}-validtime-dropdown", "value"),
     Input(f"{PAGE_ID}-output-dropdown", "value"),
     State(f"{PAGE_ID}-parameter-dropdown", "value"),
-    State(f"{PAGE_ID}-step-dropdown", "value"),
+    State(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_validtime_options(output, parameter, step, cycle, realm):
-    if not output or not parameter or not step or not cycle or not realm:
+def update_validtime_options(output, parameter, model, cycle, realm):
+    if not output or not parameter or not model or not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_validtime_options(cycle, step, parameter, output)
+    options = builder.get_validtime_options(cycle, model, parameter, output)
     return create_dropdown_options(options)
 
 
@@ -259,11 +259,11 @@ def update_validtime_options(output, parameter, step, cycle, realm):
     Input(f"{PAGE_ID}-output-dropdown", "value"),
     Input(f"{PAGE_ID}-validtime-dropdown", "value"),
     State(f"{PAGE_ID}-parameter-dropdown", "value"),
-    State(f"{PAGE_ID}-step-dropdown", "value"),
+    State(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_field_options(output, validtime, parameter, step, cycle, realm):
+def update_field_options(output, validtime, parameter, model, cycle, realm):
     hidden_style = {"width": "250px", "display": "none"}
     visible_style = {"width": "250px", "display": "inline-block", "marginRight": "10px"}
 
@@ -313,7 +313,7 @@ def update_realm2_options(realm):
     return options
 
 
-def load_and_process_data(realm, cycle, step, parameter, output, validtime, field_value, use_native_proj=False):
+def load_and_process_data(realm, cycle, model, parameter, output, validtime, field_value, use_native_proj=False):
     """Load and process data for a single realm.
 
     Args:
@@ -323,7 +323,7 @@ def load_and_process_data(realm, cycle, step, parameter, output, validtime, fiel
         Tuple of (x, y, values, data_type, colorscale_type, field_label, cycle_str, lead_hour, proj4str) or None on error
     """
     scanner = FileScanner(realm)
-    file_path = scanner.get_file_for_validtime(cycle, step, parameter, output, validtime)
+    file_path = scanner.get_file_for_validtime(cycle, model, parameter, output, validtime)
 
     if not file_path:
         return None
@@ -395,12 +395,12 @@ def load_and_process_data(realm, cycle, step, parameter, output, validtime, fiel
     Input(f"{PAGE_ID}-realm2-dropdown", "value"),
     State(f"{PAGE_ID}-output-dropdown", "value"),
     State(f"{PAGE_ID}-parameter-dropdown", "value"),
-    State(f"{PAGE_ID}-step-dropdown", "value"),
+    State(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
 def update_plot(validtime, field_value, colorscale_mode, projection_mode, compare_value, realm2,
-                output, parameter, step, cycle, realm):
+                output, parameter, model, cycle, realm):
     empty_fig = go.Figure()
     empty_fig.update_layout(
         title="Select data to display",
@@ -408,7 +408,7 @@ def update_plot(validtime, field_value, colorscale_mode, projection_mode, compar
         yaxis=dict(visible=False),
     )
 
-    if not all([validtime, output, parameter, step, cycle, realm]):
+    if not all([validtime, output, parameter, model, cycle, realm]):
         return empty_fig, ""
 
     # Check if comparison mode is enabled
@@ -417,7 +417,7 @@ def update_plot(validtime, field_value, colorscale_mode, projection_mode, compar
 
     try:
         # Load data for primary realm
-        result1 = load_and_process_data(realm, cycle, step, parameter, output, validtime, field_value, use_native_proj)
+        result1 = load_and_process_data(realm, cycle, model, parameter, output, validtime, field_value, use_native_proj)
         if result1 is None:
             return empty_fig, f"File not found for {realm}"
 
@@ -454,7 +454,7 @@ def update_plot(validtime, field_value, colorscale_mode, projection_mode, compar
 
         if compare_mode:
             # Load data for second realm
-            result2 = load_and_process_data(realm2, cycle, step, parameter, output, validtime, field_value, use_native_proj)
+            result2 = load_and_process_data(realm2, cycle, model, parameter, output, validtime, field_value, use_native_proj)
 
             if result2 is None:
                 return empty_fig, f"File not found for {realm2}"
@@ -587,7 +587,7 @@ def update_plot(validtime, field_value, colorscale_mode, projection_mode, compar
                 margin=dict(l=50, r=80, t=100, b=50),
             )
 
-            info_text = f"Comparing: {realm} vs {realm2} | {cycle} | {step} | {parameter} | {output} | {validtime}"
+            info_text = f"Comparing: {realm} vs {realm2} | {cycle} | {model} | {parameter} | {output} | {validtime}"
 
         else:
             # Single plot mode with histogram to the right
@@ -650,7 +650,7 @@ def update_plot(validtime, field_value, colorscale_mode, projection_mode, compar
             fig.update_xaxes(title_text="Count", row=1, col=2)
             fig.update_yaxes(title_text="Value", row=1, col=2)
 
-            info_text = f"{realm} | {cycle} | {step} | {parameter} | {output} | {validtime}"
+            info_text = f"{realm} | {cycle} | {model} | {parameter} | {output} | {validtime}"
 
         if field_label:
             info_text += f" | {field_label.strip(' - ')}"
@@ -662,3 +662,5 @@ def update_plot(validtime, field_value, colorscale_mode, projection_mode, compar
         error_fig = go.Figure()
         error_fig.update_layout(title=f"Error: {str(e)}", xaxis=dict(visible=False), yaxis=dict(visible=False))
         return error_fig, f"Error: {str(e)}\n{traceback.format_exc()}"
+
+

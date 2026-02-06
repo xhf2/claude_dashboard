@@ -5,6 +5,8 @@ import pandas as pd
 import xarray as xr
 from typing import Optional, Dict, Any, Tuple
 
+import config
+
 # Prevent issues with attrs being lost with every computation
 xr.set_options(keep_attrs=True)
 
@@ -153,7 +155,18 @@ class DataLoader:
         """Identify the main data variable in the dataset."""
         all_vars = list(self.dataset.data_vars)
 
-        # Filter out coordinate/projection variables
+        # First, try parameter-specific lookup from config
+        expected_var = config.PARAMETER_VARIABLE_NAMES.get(self.parameter)
+        if expected_var:
+            # Exact match
+            if expected_var in all_vars:
+                return expected_var
+            # Partial match (variable name contains expected)
+            for var in all_vars:
+                if expected_var in var:
+                    return var
+
+        # Fallback to original heuristic
         exclude_patterns = [
             "projection",
             "time",

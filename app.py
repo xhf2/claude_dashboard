@@ -16,6 +16,7 @@ app = Dash(
 
 # Define the navigation layout
 nav_links = [
+    {"name": "Home", "path": "/"},
     {"name": "Precipitation", "path": "/precipitation"},
     {"name": "3hr Precip", "path": "/precip-3hr"},
     {"name": "Temperature", "path": "/temperature"},

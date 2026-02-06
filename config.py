@@ -43,11 +43,11 @@ REALM_PATHS = {
 
 
 # =============================================================================
-# PROCESSING STEPS
-# Available processing steps in the data pipeline
+# FORECAST MODELS
+# Available forecast models in the data pipeline
 # =============================================================================
 
-STEPS = [
+MODELS = [
     "blend",
     "ecmwf_ens",
     "ecmwf_hres",
@@ -74,6 +74,11 @@ OUTPUT_TYPES = [
     "percentiles_extract",
     "probabilities_extract",
     "recfilter",
+    "apply_rainforests_calibration",
+    "nb_topographic",
+    "calc_ens_mean",
+    "calc_ens_std",
+    "regrid",
 ]
 
 # Output types that contain threshold/probability data
@@ -84,12 +89,23 @@ PROBABILITY_OUTPUT_TYPES = [
     "recfilter",
     "probabilities_extract",
     "merge_probabilities",
+    "apply_rainforests_calibration",
+    "nb_topographic",
 ]
 
 # Output types that contain percentile data
 PERCENTILE_OUTPUT_TYPES = [
     "percentiles_extract",
     "merge_percentiles",
+]
+
+# Output types that contain expected value data
+EXPECTED_VALUE_OUTPUT_TYPES = [
+    "expectedvalues_extract",
+    "merge_expectedvalues",
+    "calc_ens_mean",
+    "calc_ens_std",
+    "regrid",
 ]
 
 
@@ -315,6 +331,27 @@ PARAMETER_COLORSCALE = {
     "windspd900hPa": "Wind",
     "windspd950hPa": "Wind",
     "winddir10m": None,  # Wind direction uses circular colorscale
+}
+
+
+# =============================================================================
+# PARAMETER TO VARIABLE NAME MAPPING
+# Maps parameter names to expected NetCDF variable names
+# =============================================================================
+
+PARAMETER_VARIABLE_NAMES = {
+    # Temperature - Surface
+    "tempscreen": "temperature_at_screen_level",
+    "tempdaymax": "temperature_at_screen_level_daytime_max",
+    "tempnightmin": "temperature_at_screen_level_nighttime_min",
+    # Dew Point - Surface
+    "tempdewscreen": "temperature_of_dew_point_at_screen_level",
+    # Precipitation
+    "precipacc24h": "precipitation_accumulation",
+    "precipacc03h": "precipitation_accumulation",
+    # Wind
+    "windspd10m": "wind_speed",
+    "winddir10m": "wind_from_direction",
 }
 
 

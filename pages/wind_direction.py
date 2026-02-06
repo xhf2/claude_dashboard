@@ -58,9 +58,9 @@ layout = html.Div(
                 ),
                 html.Div(
                     [
-                        html.Label("Step"),
+                        html.Label("Model"),
                         dcc.Dropdown(
-                            id=f"{PAGE_ID}-step-dropdown",
+                            id=f"{PAGE_ID}-model-dropdown",
                             options=[],
                             value=None,
                             clearable=False,
@@ -156,34 +156,34 @@ def update_cycle_options(realm, n_clicks):
 
 
 @callback(
-    Output(f"{PAGE_ID}-step-dropdown", "options"),
-    Output(f"{PAGE_ID}-step-dropdown", "value"),
+    Output(f"{PAGE_ID}-model-dropdown", "options"),
+    Output(f"{PAGE_ID}-model-dropdown", "value"),
     Input(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_step_options(cycle, realm):
+def update_model_options(cycle, realm):
     if not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_step_options(cycle)
+    options = builder.get_model_options(cycle)
     return create_dropdown_options(options, "blend")
 
 
 @callback(
     Output(f"{PAGE_ID}-output-dropdown", "options"),
     Output(f"{PAGE_ID}-output-dropdown", "value"),
-    Input(f"{PAGE_ID}-step-dropdown", "value"),
+    Input(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_output_options(step, cycle, realm):
-    if not step or not cycle or not realm:
+def update_output_options(model, cycle, realm):
+    if not model or not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
     # Check for wind direction parameter
-    params = builder.scanner.get_parameters(cycle, step)
+    params = builder.scanner.get_parameters(cycle, model)
     if "winddir10m" in params:
-        options = builder.get_output_options(cycle, step, "winddir10m")
+        options = builder.get_output_options(cycle, model, "winddir10m")
     else:
         options = []
     return create_dropdown_options(options, "expectedvalues_extract")
@@ -193,15 +193,15 @@ def update_output_options(step, cycle, realm):
     Output(f"{PAGE_ID}-validtime-dropdown", "options"),
     Output(f"{PAGE_ID}-validtime-dropdown", "value"),
     Input(f"{PAGE_ID}-output-dropdown", "value"),
-    State(f"{PAGE_ID}-step-dropdown", "value"),
+    State(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_validtime_options(output, step, cycle, realm):
-    if not output or not step or not cycle or not realm:
+def update_validtime_options(output, model, cycle, realm):
+    if not output or not model or not cycle or not realm:
         return [], None
     builder = DropdownBuilder(realm)
-    options = builder.get_validtime_options(cycle, step, "winddir10m", output)
+    options = builder.get_validtime_options(cycle, model, "winddir10m", output)
     return create_dropdown_options(options)
 
 
@@ -212,11 +212,11 @@ def update_validtime_options(output, step, cycle, realm):
     Input(f"{PAGE_ID}-validtime-dropdown", "value"),
     Input(f"{PAGE_ID}-density-slider", "value"),
     State(f"{PAGE_ID}-output-dropdown", "value"),
-    State(f"{PAGE_ID}-step-dropdown", "value"),
+    State(f"{PAGE_ID}-model-dropdown", "value"),
     State(f"{PAGE_ID}-cycle-dropdown", "value"),
     State(f"{PAGE_ID}-realm-dropdown", "value"),
 )
-def update_plot(validtime, density, output, step, cycle, realm):
+def update_plot(validtime, density, output, model, cycle, realm):
     empty_fig = go.Figure()
     empty_fig.update_layout(
         title="Select data to display",
@@ -224,15 +224,15 @@ def update_plot(validtime, density, output, step, cycle, realm):
         yaxis=dict(visible=False),
     )
 
-    if not all([validtime, output, step, cycle, realm]):
+    if not all([validtime, output, model, cycle, realm]):
         return empty_fig, ""
 
     scanner = FileScanner(realm)
 
     # Load wind direction
-    dir_file = scanner.get_file_for_validtime(cycle, step, "winddir10m", output, validtime)
+    dir_file = scanner.get_file_for_validtime(cycle, model, "winddir10m", output, validtime)
     # Load wind speed
-    spd_file = scanner.get_file_for_validtime(cycle, step, "windspd10m", output, validtime)
+    spd_file = scanner.get_file_for_validtime(cycle, model, "windspd10m", output, validtime)
 
     if not dir_file:
         return empty_fig, f"Wind direction file not found for {validtime}"
@@ -285,7 +285,7 @@ def update_plot(validtime, density, output, step, cycle, realm):
 
         dir_loader.close()
 
-        info_text = f"{realm} | {cycle} | {step} | Wind Direction | {output} | {validtime}"
+        info_text = f"{realm} | {cycle} | {model} | Wind Direction | {output} | {validtime}"
 
         return fig, html.Div([
             html.P(info_text, style={"color": "gray", "fontSize": "12px"}),
@@ -304,3 +304,5 @@ def update_plot(validtime, density, output, step, cycle, realm):
             yaxis=dict(visible=False),
         )
         return error_fig, f"Error: {str(e)}"
+
+
